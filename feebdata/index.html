@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Feedback</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* General Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Modal Styles */
+        .modal {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            animation: fadeInUp 0.5s ease forwards;
+            width: 90%;
+            max-width: 320px; /* Adjusted for smaller screens */
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Form Styles */
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input, textarea {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007AFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Optional Button Styles */
+        .optional-button {
+            background-color: #E5E5EA;
+            color: #007AFF;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .optional-button:hover {
+            background-color: #CCCCCC;
+        }
+
+        /* Hide phone number popup initially */
+        #phoneNumberPopup {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 320px; /* Adjusted for smaller screens */
+        }
+        /* CSS Styles */
+        label {
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: ;
+            text-align: left;
+            width: 100%;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="modal animate__animated animate__fadeInUp">
+        <h2>𝘧𝘦𝘦𝘥𝘣𝘢𝘤𝘬 𝘧𝘳𝘰𝘮</h2>
+        <form id="feedbackForm" onsubmit="submitFeedback(event)">
+            <label for="name">Ｎａｍｅ</label>
+            <input type="text" id="name" placeholder="𝔈𝔫𝔱𝔢𝔯 𝔶𝔬𝔲𝔯 𝔫𝔞𝔪𝔢" required>
+            <label for="feedback">Ｆｅｅｄｂａｃｋ</label>
+            <textarea id="feedback" placeholder="Enter your experience" required></textarea>
+            <button type="button" class="optional-button" onclick="showPhoneNumberPopup()">Add Number (Optional)</button>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <div id="phoneNumberPopup" class="modal animate__animated animate__fadeInUp">
+        <h2>𝚎𝚗𝚝𝚎𝚛 𝚗𝚞𝚖𝚋𝚎𝚛</h2>
+        <input type="tel" id="phone" placeholder="ᴇɴᴛᴇʀ ʏᴏᴜʀ ɴᴜᴍʙᴇʀ">
+        <button onclick="hidePhoneNumberPopup()">Add</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/5.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.0.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.0.0/firebase-database.js"></script>
+    <!-- Add additional SDK components as needed -->
+
+    <script>
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBs5HAeKd4BJVe73HNuAUgbMXZsywXlvMk",
+            authDomain: "save-feedback.firebaseapp.com",
+            databaseURL: "https://save-feedback-default-rtdb.firebaseio.com",
+            projectId: "save-feedback",
+            storageBucket: "save-feedback.appspot.com",
+            messagingSenderId: "892913337670",
+            appId: "1:892913337670:web:555b299ff99f7bd79b5147",
+            measurementId: "G-6REBBM5ZE6"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Reference to your Firebase database
+        const database = firebase.database();
+        const feedbackRef = database.ref("feedback");
+
+        function submitFeedback(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const feedback = document.getElementById('feedback').value.trim();
+            const phone = document.getElementById('phone').value.trim(); // Get phone number if provided
+
+            // Check if input fields are not empty
+            if (name === '' || feedback === '') {
+                alert('Please enter your name and feedback before submitting.');
+                return; // Exit the function if any input field is empty
+            }
+
+            saveFeedback(name, feedback, phone); // Pass phone number to the saveFeedback function
+
+            // Clear form fields
+            document.getElementById('name').value = '';
+            document.getElementById('feedback').value = '';
+            document.getElementById('phone').value = ''; // Clear phone number input field
+
+            // Show success message or perform other actions
+            window.location.replace('thanks.html');
+        }
+
+        function saveFeedback(name, feedback, phone) {
+            const options = { timeZone: 'Asia/Kolkata', hour12: true, hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' };
+            const timestamp = new Date().toLocaleString('en-IN', options); // Get current timestamp in Indian time zone
+            feedbackRef.push({
+                name: name,
+                feedback: feedback,
+                phone: phone, // Store phone number in the database
+                timestamp: timestamp // Add timestamp to the feedback data
+            });
+        }
+
+        function showPhoneNumberPopup() {
+            document.getElementById('phoneNumberPopup').style.display = 'block';
+        }
+
+        function hidePhoneNumberPopup() {
+            document.getElementById('phoneNumberPopup').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
